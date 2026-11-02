@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Low Stock Alerts | FAST MART</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6f3;
+            color: #1f2937;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1050px;
+            margin: auto;
+        }
+        h1 { color: #176b37; }
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+        th, td {
+            text-align: left;
+            padding: 13px 10px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th { background: #eef7ef; }
+        .critical { color: #b91c1c; font-weight: bold; }
+        .warning { color: #b45309; font-weight: bold; }
+        input {
+            width: 75px;
+            padding: 8px;
+        }
+        button {
+            padding: 9px 12px;
+            border: 0;
+            border-radius: 6px;
+            color: white;
+            background: #176b37;
+            cursor: pointer;
+        }
+        .empty {
+            padding: 20px;
+            background: #eef7ef;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>FAST MART — Low Stock Alerts</h1>
+    <p>Products whose available stock has reached their configured threshold.</p>
+
+    <div class="panel">
+        {% if products %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Available Stock</th>
+                    <th>Threshold</th>
+                    <th>Alert</th>
+                    <th>Update Threshold</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for product in products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.stock_quantity }}</td>
+                    <td>{{ product.low_stock_threshold }}</td>
+                    <td>
+                        {% if product.stock_quantity == 0 %}
+                            <span class="critical">OUT OF STOCK</span>
+                        {% else %}
+                            <span class="warning">LOW STOCK</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST"
+                              action="{{ url_for(
+                                  'admin_update_stock_threshold',
+                                  product_id=product.id
+                              ) }}">
+                            <input type="number"
+                                   name="threshold"
+                                   min="0"
+                                   required
+                                   value="{{ product.low_stock_threshold }}">
+                            <button type="submit">Save</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <div class="empty">
+                <h3>All good!</h3>
+                <p>No active products are currently below their stock thresholds.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <p><a href="{{ url_for('admin') }}">Back to Admin Dashboard</a></p>
+</div>
+</body>
+</html>

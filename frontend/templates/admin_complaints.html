@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage Complaints | FAST MART</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="navbar">
+    <a href="{{ url_for('admin_dashboard') }}">FAST MART Admin</a>
+    <nav>
+        <a href="{{ url_for('admin_analytics') }}">Analytics</a>
+        <a href="{{ url_for('admin_products_page') }}">Products</a>
+    </nav>
+</header>
+
+<main class="container">
+    <h1>Customer Complaints</h1>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    {% for complaint in complaints %}
+        <article class="form-card">
+            <h2>Complaint #{{ complaint.id }}</h2>
+            <p><strong>{{ complaint.subject }}</strong></p>
+            <p>Customer: {{ complaint.customer_name }}
+                ({{ complaint.customer_email }})</p>
+            <p>Order: {{ complaint.order_id or 'Not specified' }}</p>
+            <p>Category: {{ complaint.category.replace('_', ' ') }}</p>
+            <p>{{ complaint.description }}</p>
+            <p>Current status: {{ complaint.status }}</p>
+
+            <form method="POST"
+                  action="{{ url_for('admin_update_complaint',
+                                     complaint_id=complaint.id) }}">
+                {# Add a valid CSRF token here when CSRF protection is configured. #}
+
+                <label>Status</label>
+                <select name="status" required>
+                    {% for status in ['open', 'in_progress', 'resolved', 'rejected'] %}
+                        <option value="{{ status }}"
+                            {% if complaint.status == status %}selected{% endif %}>
+                            {{ status.replace('_', ' ')|title }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <label>Response to customer</label>
+                <textarea name="admin_response"
+                          maxlength="5000"
+                          rows="4">{{ complaint.admin_response or '' }}</textarea>
+
+                <button type="submit">Save Response</button>
+            </form>
+        </article>
+    {% else %}
+        <p>No complaints have been submitted.</p>
+    {% endfor %}
+</main>
+</body>
+</html>

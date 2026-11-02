@@ -1,0 +1,284 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAST MART - Track Order</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .tracking-container {
+            max-width: 850px;
+            margin: 35px auto;
+            padding: 24px;
+        }
+
+        .tracking-card {
+            padding: 22px;
+            margin: 18px 0;
+            border-radius: 14px;
+            border: 1px solid #d9e2f0;
+            background: #fff;
+        }
+
+        .tracking-step {
+            display: flex;
+            gap: 14px;
+            padding: 15px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .step-icon {
+            font-size: 23px;
+            min-width: 32px;
+        }
+
+        .step-done {
+            color: #15803d;
+            font-weight: 600;
+        }
+
+        .step-pending {
+            color: #64748b;
+        }
+
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 8px 0;
+        }
+
+        .tracking-button {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 12px 18px;
+            border-radius: 8px;
+            background: #2563eb;
+            color: white;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .cancel-button {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 12px 20px;
+            background: #dc2626;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .cancel-button:hover {
+            background: #b91c1c;
+        }
+
+        .cancelled-message {
+            padding: 12px;
+            border-radius: 8px;
+            color: #991b1b;
+            background: #fee2e2;
+        }
+
+        .notice {
+            margin-top: 10px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            .tracking-container {
+                padding: 12px;
+                margin: 15px auto;
+            }
+
+            .tracking-card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<main class="tracking-container">
+
+    <h1>FAST MART</h1>
+    <h2>Track Your Order #{{ order.order_id }}</h2>
+
+    {% set status = (order.order_status or 'pending')|lower|replace(' ', '_') %}
+
+    <section class="tracking-card">
+        <h3>Order Status</h3>
+
+        {% if status == 'cancelled' %}
+            <p class="cancelled-message">
+                ❌ This order has been cancelled.
+            </p>
+        {% else %}
+            {% set steps = [
+                ('confirmed', 'Order confirmed'),
+                ('packed', 'Items packed'),
+                ('out_for_delivery', 'Out for delivery'),
+                ('delivered', 'Delivered')
+            ] %}
+
+            {% set progress = {
+                'pending': 0,
+                'confirmed': 1,
+                'packed': 2,
+                'out_for_delivery': 3,
+                'delivered': 4
+            } %}
+
+            {% for step_status, label in steps %}
+                {% set step_number = loop.index %}
+                <div class="tracking-step">
+                    <div class="step-icon">
+                        {% if progress.get(status, 0) >= step_number %}
+                            ✅
+                        {% else %}
+                            ⏳
+                        {% endif %}
+                    </div>
+
+                    <div class="{% if progress.get(status, 0) >= step_number %}step-done{% else %}step-pending{% endif %}">
+                        {{ label }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    
+        <p>
+            <strong>Order status:</strong>
+            {{ status|replace('_', ' ')|title }}
+        </p>
+
+        <p>
+            <strong>Payment:</strong>
+            {{ (order.payment_status or 'pending')|replace('_', ' ')|title }}
+        </p>
+
+        {% if order.delivery_status %}
+            <p>
+                <strong>Delivery status:</strong>
+                {{ order.delivery_status|replace('_', ' ')|title }}
+            </p>
+        {% endif %}
+<a class="tracking-button"
+   href="{{ url_for('order_invoice', order_id=order.order_id) }}">
+    🧾 View / Print Invoice
+</a>
+<button type="button" class="btn-primary" id="show-route">
+    Refresh Route and ETA
+</button>
+
+<p id="route-status" role="status">
+    Route has not been calculated yet.
+</p>
+<div id="route-summary" hidden>
+    <p>Distance: <strong id="route-distance"></strong></p>
+    <p>Estimated travel time: <strong id="route-duration"></strong></p>
+</div>
+  <!-- Cancel order button -->
+        {% if status in ['pending', 'confirmed'] %}
+            <form
+                method="POST"
+                action="{{ url_for('cancel_order', order_id=order.order_id) }}"
+                onsubmit="return confirm('Are you sure you want to cancel order #{{ order.order_id }}?');"
+            >
+                <button type="submit" class="cancel-button">
+                    ✖ Cancel Order
+                </button>
+            </form>
+
+            <p class="notice">
+                You can cancel this order while it is pending or confirmed.
+            </p>
+
+        {% elif status == 'cancelled' %}
+            <p class="cancelled-message">
+                This order has already been cancelled.
+            </p>
+
+        {% else %}
+            <p class="notice">
+                Cancellation is unavailable because this order has progressed
+                beyond the pending or confirmed stage.
+            </p>
+        {% endif %}
+    </section>
+
+    <section class="tracking-card">
+        <h3>Delivery Details</h3>
+
+        <p>
+            <strong>Address:</strong>
+            {{ order.delivery_address or 'Address not available' }}
+        </p>
+
+        {% if order.worker_name %}
+            <p><strong>Delivery worker:</strong> {{ order.worker_name }}</p>
+        {% endif %}
+
+        {% if order.worker_phone %}
+            <p>
+                <strong>Worker phone:</strong>
+                <a href="tel:{{ order.worker_phone }}">{{ order.worker_phone }}</a>
+            </p>
+        {% endif %}
+
+        {% if order.assigned_at %}
+            <p><strong>Assigned:</strong> {{ order.assigned_at }}</p>
+        {% endif %}
+
+        {% if order.delivered_at %}
+            <p><strong>Delivered at:</strong> {{ order.delivered_at }}</p>
+        {% endif %}
+    </section>
+
+    <section class="tracking-card">
+        <h3>Items in Your Order</h3>
+
+        {% for item in order["items"] %}
+            <div class="item-row">
+                <span>{{ item.product_name }} × {{ item.quantity }}</span>
+                <span>₹{{ "%.2f"|format(item.line_total or 0) }}</span>
+            </div>
+        {% else %}
+            <p>No order items found.</p>
+        {% endfor %}
+
+        <hr>
+
+        <div class="item-row">
+            <span>Subtotal</span>
+            <span>₹{{ "%.2f"|format(order.subtotal or 0) }}</span>
+        </div>
+
+        <div class="item-row">
+            <span>Delivery fee</span>
+            <span>₹{{ "%.2f"|format(order.delivery_fee or 0) }}</span>
+        </div>
+
+        <div class="item-row">
+            <strong>Total</strong>
+            <strong>₹{{ "%.2f"|format(order.total_amount or 0) }}</strong>
+        </div>
+    </section>
+
+    <a class="tracking-button" href="{{ url_for('my_orders') }}">
+        ← Back to My Orders
+    </a>
+
+</main>
+</body>
+</html>

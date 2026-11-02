@@ -1,0 +1,57 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Order Confirmed - FAST MART</title>
+    <style>
+        body {
+            background: #101827;
+            color: #f8fafc;
+            font-family: Arial, sans-serif;
+            padding: 25px;
+        }
+
+        main {
+            max-width: 550px;
+            margin: 60px auto;
+            background: #1d2a40;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        h1, .amount { color: #55f2a5; }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            color: #55f2a5;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Order Placed Successfully!</h1>
+
+    <p>Thank you for shopping with FAST MART.</p>
+
+    <h2>Order #{{ order_id }}</h2>
+
+    <p>Subtotal: ₹{{ "%.2f"|format(subtotal) }}</p>
+    <p>Delivery fee: ₹{{ "%.2f"|format(delivery_fee) }}</p>
+
+    <h2 class="amount">
+        Total: ₹{{ "%.2f"|format(total) }}
+    </h2>
+
+    <p>Payment: Cash on Delivery</p>
+    <p>Payment status: Pending</p>
+    <p>Delivery status: Waiting for assignment</p>
+
+    <a href="/">Continue Shopping</a>
+    <a href="/market">Return to 3D Market</a>
+</main>
+</body>
+</html>

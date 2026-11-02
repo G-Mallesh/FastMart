@@ -1,0 +1,225 @@
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Invoice #{{ order.order_id }} | FAST MART</title>
+
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background: #f3f6f9;
+            color: #172033;
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        .invoice {
+            max-width: 850px;
+            margin: auto;
+            padding: 32px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            border-bottom: 3px solid #16803d;
+            padding-bottom: 20px;
+        }
+
+        .brand {
+            color: #16803d;
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .muted { color: #64748b; }
+
+        .address {
+            margin: 24px 0;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px 8px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        th { background: #eaf8ef; }
+        .number { text-align: right; }
+
+        .totals {
+            max-width: 360px;
+            margin: 24px 0 0 auto;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 8px 0;
+        }
+
+        .grand-total {
+            border-top: 2px solid #16803d;
+            padding-top: 14px;
+            color: #16803d;
+            font-size: 21px;
+            font-weight: bold;
+        }
+
+        .actions {
+            max-width: 850px;
+            margin: 20px auto;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 18px;
+            border: 0;
+            border-radius: 8px;
+            background: #16803d;
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .secondary { background: #2563eb; }
+
+        @media print {
+            body { padding: 0; background: white; }
+            .invoice {
+                border: none;
+                border-radius: 0;
+                padding: 10px;
+            }
+            .actions { display: none; }
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 8px; }
+            .invoice { padding: 14px; }
+            th, td { padding: 8px 4px; font-size: 12px; }
+        }
+    </style>
+</head>
+
+<body>
+<main class="invoice">
+    <header class="header">
+        <div>
+            <div class="brand">FAST MART</div>
+            <p class="muted">Your groceries, delivered.</p>
+        </div>
+
+        <div>
+            <h1>INVOICE</h1>
+            <p>Order #: {{ order.order_id }}</p>
+            <p>
+                Date:
+                {{ order.created_at.strftime('%d %b %Y, %I:%M %p')
+                   if order.created_at else '—' }}
+            </p>
+            <p>
+                Order status:
+                {{ (order.order_status or 'unknown')|replace('_', ' ')|title }}
+            </p>
+            <p>
+                Payment:
+                {{ (order.payment_status or 'unknown')|replace('_', ' ')|title }}
+            </p>
+        </div>
+    </header>
+
+    <section class="address">
+        <h3>Delivery Address</h3>
+        <p>{{ order.delivery_address or 'Address not available' }}</p>
+    </section>
+
+    <h2>Order Items</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th class="number">Qty</th>
+                <th class="number">Unit Price</th>
+                <th class="number">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product_name }}</td>
+                <td class="number">{{ item.quantity }}</td>
+                <td class="number">
+                    ₹{{ "%.2f"|format(item.unit_price or 0) }}
+                </td>
+                <td class="number">
+                    ₹{{ "%.2f"|format(item.line_total or 0) }}
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4">No items found for this order.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <section class="totals">
+        <div class="total-row">
+            <span>Subtotal</span>
+            <span>₹{{ "%.2f"|format(order.subtotal or 0) }}</span>
+        </div>
+
+        <div class="total-row">
+            <span>Delivery fee</span>
+            <span>₹{{ "%.2f"|format(order.delivery_fee or 0) }}</span>
+        </div>
+
+        <div class="total-row grand-total">
+            <span>Total</span>
+            <span>₹{{ "%.2f"|format(order.total_amount or 0) }}</span>
+        </div>
+    </section>
+
+    <p class="muted" style="margin-top: 32px;">
+        Thank you for shopping with FAST MART!
+    </p>
+</main>
+
+<div class="actions">
+    <button class="button" onclick="window.print()">
+        🖨️ Print / Save as PDF
+    </button>
+
+    <a class="button secondary" href="{{ url_for('my_orders') }}">
+        ← Back to My Orders
+    </a>
+</div>
+</body>
+</html>

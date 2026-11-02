@@ -1,0 +1,120 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Product Management | FAST MART</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: #f8fafc;
+        }
+        main { max-width: 1100px; margin: auto; }
+        h1 { color: #55f2a5; }
+        a { color: #55f2a5; }
+        .panel {
+            background: #1d2a40;
+            padding: 20px;
+            margin: 18px 0;
+            border-radius: 12px;
+        }
+        .button, button {
+            display: inline-block;
+            padding: 10px 13px;
+            margin: 4px;
+            border: 0;
+            border-radius: 6px;
+            background: #55f2a5;
+            color: #102018;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .muted { color: #b6c4d9; }
+        .message { color: #ffd166; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 650px; }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #40516b;
+        }
+        .inactive { color: #ffb4a2; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Product Management</h1>
+    <p><a href="{{ url_for('admin_dashboard') }}">← Admin Dashboard</a></p>
+
+    {% with messages = get_flashed_messages() %}
+      {% for message in messages %}
+        <p class="message">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    <section class="panel">
+        <h2>Inventory</h2>
+        <a class="button" href="{{ url_for('admin_product_new') }}">
+            + Add Product
+        </a>
+
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in products %}
+                <tr>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.category or 'Uncategorized' }}</td>
+                    <td>₹{{ "%.2f"|format(p.price) }}</td>
+                    <td>{{ p.stock_quantity }}</td>
+                    <td>
+                        {% if p.is_active %}
+                            Active
+                        {% else %}
+                            <span class="inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a class="button"
+                           href="{{ url_for('admin_product_edit',
+                                            product_id=p.id) }}">Edit</a>
+
+                        <form method="POST"
+                              action="{{ url_for('admin_product_toggle',
+                                                 product_id=p.id) }}"
+                              style="display:inline">
+                            {% if p.is_active %}
+                                <input type="hidden" name="is_active" value="0">
+                                <button type="submit">Deactivate</button>
+                            {% else %}
+                                <input type="hidden" name="is_active" value="1">
+                                <button type="submit">Activate</button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6">No products found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

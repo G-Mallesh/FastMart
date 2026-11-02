@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }} | FAST MART</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        .detail-container {
+            width: min(1000px, calc(100% - 32px));
+            margin: 30px auto;
+        }
+
+        .detail-card, .review-card {
+            background: white;
+            border: 1px solid #e2e9e2;
+            border-radius: 16px;
+            padding: 22px;
+            margin-bottom: 20px;
+        }
+
+        .detail-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 28px;
+            align-items: center;
+        }
+
+        .detail-image {
+            width: 100%;
+            max-height: 340px;
+            object-fit: contain;
+            background: #f0f7ef;
+            border-radius: 14px;
+        }
+
+        .rating-stars {
+            color: #f59e0b;
+            letter-spacing: 2px;
+            font-size: 1.25rem;
+        }
+
+        .review-form label {
+            display: block;
+            font-weight: 650;
+            margin: 14px 0 6px;
+        }
+
+        .review-form button {
+            margin-top: 14px;
+        }
+
+        @media (max-width: 650px) {
+            .detail-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+<main class="detail-container">
+    <p><a href="{{ url_for('market') }}">← Back to market</a></p>
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            {% for message in messages %}
+                <p class="flash-message">{{ message }}</p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <section class="detail-card detail-layout">
+        <div>
+            {% if product.image_url %}
+                {% if product.image_url.startswith('http://')
+                   or product.image_url.startswith('https://') %}
+                    <img class="detail-image"
+                         src="{{ product.image_url }}"
+                         alt="{{ product.name }}">
+                {% else %}
+                    <img class="detail-image"
+                         src="{{ url_for('static', filename=product.image_url) }}"
+                         alt="{{ product.name }}">
+                {% endif %}
+            {% else %}
+                <div class="detail-image">Image not available</div>
+            {% endif %}
+        </div>
+
+        <div>
+            <p>{{ product.category or 'Grocery' }}</p>
+            <h1>{{ product.name }}</h1>
+            <p>{{ product.description or 'Fresh products from FAST MART.' }}</p>
+
+            <p class="product-price">
+                ₹{{ "%.2f"|format(product.price) }}
+            </p>
+
+            <p>
+                {% if product.review_count %}
+                    <span class="rating-stars">
+                        {% for n in range(1, 6) %}
+                            {{ '★' if n <= (product.average_rating|round(0, 'floor')|int) else '☆' }}
+                        {% endfor %}
+                    </span>
+                    {{ "%.1f"|format(product.average_rating) }}/5
+                    ({{ product.review_count }} reviews)
+                {% else %}
+                    No reviews yet
+                {% endif %}
+            </p>
+
+            {% if product.stock_quantity > 0 %}
+                <p class="stock-label">
+                    {{ product.stock_quantity }} available
+                </p>
+            {% else %}
+                <p class="stock-label stock-low">Out of stock</p>
+            {% endif %}
+
+            <p>
+                <a class="btn-primary"
+                   href="{{ url_for('market') }}">
+                    Continue Shopping
+                </a>
+            </p>
+        </div>
+    </section>
+
+    <section class="review-card">
+        <h2>Customer Reviews</h2>
+
+        {% if reviews %}
+            {% for review in reviews %}
+                <article class="review-card">
+                    <strong>{{ review.customer_name }}</strong>
+
+                    <div class="rating-stars" aria-label="{{ review.rating }} out of 5 stars">
+                        {% for n in range(1, 6) %}
+                            {{ '★' if n <= review.rating else '☆' }}
+                        {% endfor %}
+                    </div>
+
+                    <p>{{ review.comment }}</p>
+                    <small>{{ review.created_at }}</small>
+                </article>
+            {% endfor %}
+        {% else %}
+            <p>No customer reviews yet. Be the first to review this product after delivery.</p>
+        {% endif %}
+    </section>
+
+    {% if session.get('role') == 'customer' %}
+        <section class="review-card">
+            <h2>Write a Review</h2>
+            <p>You must have received this product to review it. One review per product per account.</p>
+
+            <form class="review-form"
+                  method="POST"
+                  action="{{ url_for('submit_product_review', product_id=product.id) }}">
+
+                <label for="rating">Your rating</label>
+                <select id="rating" name="rating" required>
+                    <option value="">Choose stars</option>
+                    <option value="5">★★★★★ — Excellent</option>
+                    <option value="4">★★★★☆ — Very good</option>
+                    <option value="3">★★★☆☆ — Good</option>
+                    <option value="2">★★☆☆☆ — Fair</option>
+                    <option value="1">★☆☆☆☆ — Poor</option>
+                </select>
+
+                <label for="comment">Your review</label>
+                <textarea
+                    id="comment"
+                    name="comment"
+                    rows="4"
+                    maxlength="1000"
+                    required
+                    placeholder="Share your experience with this product..."
+                ></textarea>
+
+                <button type="submit" class="btn-primary">
+                    Submit Review
+                </button>
+            </form>
+        </section>
+    {% endif %}
+</main>
+</body>
+</html>

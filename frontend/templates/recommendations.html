@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Recommended Products | FAST MART</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .recommendations-page {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 16px;
+        }
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .recommendation-card {
+            background: white;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 3px 14px #0000000d;
+            padding-bottom: 16px;
+        }
+        .recommendation-card img {
+            width: 100%;
+            height: 190px;
+            object-fit: cover;
+        }
+        .recommendation-info { padding: 14px; }
+        .recommendation-price {
+            color: #16803d;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .recommendation-card form { padding: 0 14px; }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <a href="{{ url_for('login') }}">FAST MART</a>
+        <nav>
+            <a href="{{ url_for('market') }}">Shop</a>
+            <a href="{{ url_for('products') }}">Cart</a>
+            <a href="{{ url_for('my_orders') }}">My Orders</a>
+        </nav>
+    </header>
+
+    <main class="recommendations-page">
+        <h1>Recommended For You</h1>
+        <p>Discover products you may like based on your shopping history.</p>
+
+        <section class="recommendation-grid">
+            {% for product in products %}
+            <article class="recommendation-card">
+                {% if product.image_url %}
+                    {% if product.image_url.startswith('http://')
+                       or product.image_url.startswith('https://') %}
+                        <img src="{{ product.image_url }}"
+                             alt="{{ product.name }}">
+                    {% else %}
+                        <img src="{{ url_for('static', filename=product.image_url) }}"
+                             alt="{{ product.name }}">
+                    {% endif %}
+                {% else %}
+                    <img src="https://placehold.co/400x250?text=FAST+MART"
+                         alt="Product image unavailable">
+                {% endif %}
+
+                <div class="recommendation-info">
+                    <h3>{{ product.name }}</h3>
+                    <p>{{ product.category_name or 'Grocery' }}</p>
+                    <p class="recommendation-price">
+                        ₹{{ "%.2f"|format(product.price) }}
+                    </p>
+                    <p>
+                        {% if product.stock_quantity > 0 %}
+                            In stock
+                        {% else %}
+                            Out of stock
+                        {% endif %}
+                    </p>
+                </div>
+
+                <form method="POST"
+                      action="{{ url_for('add_to_cart',
+                                         product_id=product.id) }}">
+                    <button type="submit"
+                            {% if product.stock_quantity <= 0 %}disabled{% endif %}>
+                        Add to Cart
+                    </button>
+                </form>
+            </article>
+            {% else %}
+            <p>No recommendations are available right now. Visit the shop to explore products.</p>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

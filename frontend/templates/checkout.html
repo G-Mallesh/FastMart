@@ -1,0 +1,616 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Checkout | FAST MART</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+        <link rel="stylesheet"
+                    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f5f7fb;
+            color: #172033;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding: 16px 5%;
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .navbar > a {
+            color: #15803d;
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-decoration: none;
+        }
+
+        .navbar nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+        }
+
+        .navbar nav a {
+            color: #334155;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .navbar nav a:hover {
+            color: #16a34a;
+        }
+
+        .checkout-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+            gap: 24px;
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 16px;
+        }
+
+        .checkout-layout h1 {
+            color: #15803d;
+        }
+
+        .checkout-card {
+            min-width: 0;
+            padding: 24px;
+            margin-bottom: 20px;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+        }
+
+        .checkout-card h2 {
+            margin-top: 0;
+            color: #172033;
+        }
+
+        .checkout-form label {
+            display: block;
+            margin: 14px 0 6px;
+            font-weight: 600;
+        }
+
+        .checkout-form input,
+        .checkout-form textarea,
+        .checkout-form select {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: #fff;
+            color: #172033;
+            font: inherit;
+        }
+
+        .checkout-form input:focus,
+        .checkout-form textarea:focus,
+        .checkout-form select:focus,
+        .coupon-form input:focus {
+            outline: 2px solid #86efac;
+            border-color: #16a34a;
+        }
+
+        .checkout-form textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .checkout-product {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #edf0f2;
+        }
+
+        .checkout-product strong {
+            overflow-wrap: anywhere;
+        }
+
+        .checkout-product > span {
+            white-space: nowrap;
+        }
+
+        .checkout-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 14px 0;
+        }
+
+        .checkout-total-row strong {
+            text-align: right;
+        }
+
+        .checkout-total {
+            padding-top: 16px;
+            border-top: 1px solid #ddd;
+            color: #15803d;
+            font-size: 1.2rem;
+            font-weight: 800;
+        }
+
+        .checkout-note {
+            color: #64748b;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .checkout-submit,
+        .coupon-form button {
+            padding: 13px 16px;
+            border: none;
+            border-radius: 8px;
+            background: #16a34a;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .checkout-submit {
+            width: 100%;
+            margin-top: 16px;
+        }
+
+        .checkout-submit:hover,
+        .coupon-form button:hover {
+            background: #15803d;
+        }
+
+        .checkout-submit:disabled {
+            opacity: 0.65;
+            cursor: wait;
+        }
+
+        .coupon-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .coupon-form input {
+            flex: 1;
+            min-width: 130px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .btn-secondary {
+            padding: 11px 15px;
+            border: none;
+            border-radius: 8px;
+            background: #e2e8f0;
+            color: #334155;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+        }
+
+        .checkout-messages {
+            padding: 12px 16px;
+            margin-bottom: 18px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 8px;
+            color: #1e40af;
+            overflow-wrap: anywhere;
+        }
+
+        .checkout-messages p {
+            margin: 4px 0;
+        }
+
+        .payment-status {
+            margin-top: 12px;
+            color: #b45309;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 720px) {
+            .checkout-layout {
+                grid-template-columns: minmax(0, 1fr);
+                margin: 15px auto;
+                padding: 12px;
+            }
+
+            .checkout-card {
+                padding: 18px;
+            }
+
+            .navbar {
+                padding: 14px 18px;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .coupon-form {
+                flex-direction: column;
+            }
+
+            .coupon-form input,
+            .coupon-form button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="navbar">
+        <a href="{{ url_for('home') }}">FAST MART</a>
+
+        <nav>
+            <a href="{{ url_for('market') }}">Continue shopping</a>
+            <a href="{{ url_for('view_cart') }}">My cart</a>
+        </nav>
+    </header>
+
+    <main class="checkout-layout">
+
+        <section>
+            <h1>Checkout</h1>
+
+            <p class="checkout-note">
+                Review your order and delivery details.
+            </p>
+
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="checkout-messages" role="alert">
+                        {% for message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <!-- DELIVERY AND PAYMENT -->
+            <div class="checkout-card">
+                <h2>1. Delivery details</h2>
+
+                <form
+                    class="checkout-form"
+                    id="checkout-form"
+                    method="POST"
+                    action="{{ url_for('checkout') }}"
+                >
+                    <label for="delivery_address">
+                        Full delivery address
+                    </label>
+
+                    <textarea
+                        id="delivery_address"
+                        name="delivery_address"
+                        minlength="10"
+                        maxlength="1000"
+                        required
+                        placeholder="House number, street, area, city, PIN code"
+                    >{{ request.form.get('delivery_address', '') }}</textarea>
+                   
+<div class="map-location-section">
+    <h3>Choose delivery location</h3>
+    <p>Enter your address above, then select your location on the map or use your device's location.</p>
+
+    <button type="button" id="locate-me" class="btn-secondary">
+        Use My Current Location
+    </button>
+
+    <p id="location-message" role="status" aria-live="polite">
+        No map location selected yet.
+    </p>
+
+    <div id="delivery-map"
+         style="height:350px; width:100%; border-radius:12px; margin:15px 0;">
+    </div>
+
+    <input type="hidden" name="delivery_latitude" id="delivery_latitude">
+    <input type="hidden" name="delivery_longitude" id="delivery_longitude">
+</div>
+
+                    <label for="payment_method">
+                        Payment method
+                    </label>
+
+                    <select
+                        id="payment_method"
+                        name="payment_method"
+                        required
+                    >
+                        <option
+                            value="cash_on_delivery"
+                            {% if request.form.get('payment_method', 'cash_on_delivery') == 'cash_on_delivery' %}selected{% endif %}
+                        >
+                            Cash on Delivery
+                        </option>
+
+                        <option
+                            value="razorpay"
+                            {% if request.form.get('payment_method') == 'razorpay' %}selected{% endif %}
+                        >
+                            Online Payment (Razorpay)
+                        </option>
+                    </select>
+
+                    <p class="checkout-note">
+                        Select Cash on Delivery or pay securely using
+                        Razorpay if online payments are configured.
+                    </p>
+
+                    <button
+                        class="checkout-submit"
+                        id="place-order-button"
+                        type="submit"
+                    >
+                        Place Order
+                    </button>
+
+                    <p
+                        class="payment-status"
+                        id="payment-status"
+                        role="status"
+                        aria-live="polite"
+                    ></p>
+                </form>
+            </div>
+
+            <!-- COUPON -->
+            <div class="checkout-card">
+                <h2>2. Coupon code</h2>
+
+                <form
+                    class="coupon-form"
+                    method="POST"
+                    action="{{ url_for('apply_coupon') }}"
+                >
+                    <input
+                        type="text"
+                        name="coupon_code"
+                        maxlength="40"
+                        placeholder="Enter coupon code"
+                        value="{{ session.get('coupon_code', '') }}"
+                        aria-label="Coupon code"
+                        required
+                    >
+
+                    <button type="submit">Apply Coupon</button>
+                </form>
+
+                {% if session.get('coupon_code') %}
+                    <p>
+                        Applied coupon:
+                        <strong>{{ session.get('coupon_code') }}</strong>
+                    </p>
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('remove_coupon') }}"
+                    >
+                        <button
+                            class="btn-secondary"
+                            type="submit"
+                        >
+                            Remove Coupon
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- ORDER SUMMARY -->
+        <aside class="checkout-card">
+            <h2>Order Summary</h2>
+
+            {% for item in items %}
+                <div class="checkout-product">
+                    <div>
+                        <strong>{{ item.name }}</strong>
+
+                        <div class="checkout-note">
+                            Quantity: {{ item.quantity }}
+                        </div>
+                    </div>
+
+                    <span>
+                        ₹{{ "%.2f"|format(item.line_total|float) }}
+                    </span>
+                </div>
+            {% else %}
+                <p>Your cart is empty.</p>
+                <a href="{{ url_for('market') }}">Continue shopping</a>
+            {% endfor %}
+
+            <div class="checkout-total-row">
+                <span>Subtotal</span>
+                <strong>
+                    ₹{{ "%.2f"|format(subtotal|float) }}
+                </strong>
+            </div>
+
+            <div class="checkout-total-row">
+                <span>Coupon discount</span>
+                <strong>
+                    −₹{{ "%.2f"|format(discount_amount|default(0, true)|float) }}
+                </strong>
+            </div>
+
+            <div class="checkout-total-row">
+                <span>Delivery fee</span>
+                <strong>
+                    ₹{{ "%.2f"|format(0 if subtotal|float >= 500 else 40) }}
+                </strong>
+            </div>
+
+            <div class="checkout-total-row checkout-total">
+                <span>Total</span>
+
+                <strong>
+                    ₹{{ "%.2f"|format(
+                        subtotal|float
+                        - (discount_amount|default(0, true)|float)
+                        + (0 if subtotal|float >= 500 else 40)
+                    ) }}
+                </strong>
+            </div>
+
+            <p class="checkout-note">
+                Free delivery on orders of ₹500 or more. Your server
+                must validate the final total, coupon and stock before
+                accepting an order.
+            </p>
+        </aside>
+
+    </main>
+
+    <script>
+        document.getElementById("checkout-form").addEventListener(
+            "submit",
+            function (event) {
+                const paymentMethod =
+                    document.getElementById("payment_method").value;
+
+                const button =
+                    document.getElementById("place-order-button");
+
+                const status =
+                    document.getElementById("payment-status");
+
+                if (paymentMethod === "razorpay") {
+                    /*
+                     * The backend route must create a Razorpay order.
+                     * Payment verification must be performed server-side.
+                     */
+                    this.action =
+                        "{{ url_for('create_online_payment') }}";
+
+                    status.textContent =
+                        "Starting secure online payment...";
+                } else {
+                    this.action =
+                        "{{ url_for('checkout') }}";
+
+                    status.textContent =
+                        "Placing your Cash on Delivery order...";
+                }
+
+                button.disabled = true;
+                button.textContent = "Please wait...";
+            }
+        );
+    </script>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const mapElement = document.getElementById("delivery-map");
+    const latitudeInput = document.getElementById("delivery_latitude");
+    const longitudeInput = document.getElementById("delivery_longitude");
+    const message = document.getElementById("location-message");
+    const locateButton = document.getElementById("locate-me");
+
+    if (!mapElement || !latitudeInput || !longitudeInput) return;
+
+    // Initial map view; this is not the customer's actual location.
+    const map = L.map("delivery-map").setView([20.5937, 78.9629], 5);
+
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = null;
+
+    function selectLocation(lat, lng) {
+        latitudeInput.value = lat.toFixed(7);
+        longitudeInput.value = lng.toFixed(7);
+
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng], {
+                draggable: true
+            }).addTo(map);
+            marker.on("dragend", function () {
+                const point = marker.getLatLng();
+                selectLocation(point.lat, point.lng);
+            });
+        }
+
+        map.setView([lat, lng], 16);
+        message.textContent =
+            "Selected coordinates: " + lat.toFixed(5) +
+            ", " + lng.toFixed(5);
+    }
+
+    map.on("click", function (event) {
+        selectLocation(event.latlng.lat, event.latlng.lng);
+    });
+
+    locateButton.addEventListener("click", function () {
+        if (!navigator.geolocation) {
+            message.textContent =
+                "Geolocation is not supported by this browser.";
+            return;
+        }
+
+        message.textContent = "Requesting location permission…";
+
+        navigator.geolocation.getCurrentPosition(
+            function (position) {
+                selectLocation(
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
+            },
+            function (error) {
+                message.textContent =
+                    "Location unavailable. Allow location access or select a point on the map.";
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    });
+
+    // Ensure Leaflet measures the map correctly when its container loads.
+    setTimeout(function () {
+        map.invalidateSize();
+    }, 200);
+});
+</script>
+
+
+</body>
+</html>

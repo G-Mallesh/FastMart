@@ -1,0 +1,201 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAST MART | Coupon Management</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .coupon-page { max-width: 1150px; margin: 30px auto; padding: 20px; }
+        .coupon-panel {
+            background: white; padding: 24px; margin: 20px 0;
+            border-radius: 14px; box-shadow: 0 4px 18px #0000000d;
+        }
+        .coupon-form {
+            display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        .coupon-form label { display: block; font-weight: 600; margin-bottom: 6px; }
+        .coupon-form input, .coupon-form select {
+            width: 100%; box-sizing: border-box; padding: 11px;
+            border: 1px solid #d5dce2; border-radius: 8px;
+        }
+        .coupon-table-wrap { overflow-x: auto; }
+        .coupon-table { width: 100%; border-collapse: collapse; }
+        .coupon-table th, .coupon-table td {
+            padding: 12px; border-bottom: 1px solid #e7eaee;
+            text-align: left; white-space: nowrap;
+        }
+        .coupon-table th { background: #f5f8f6; }
+        .coupon-active { color: #16803d; font-weight: 700; }
+        .coupon-inactive { color: #b42318; font-weight: 700; }
+        .coupon-actions { display: flex; gap: 8px; align-items: center; }
+        .coupon-actions button { padding: 8px 12px; cursor: pointer; }
+        .coupon-flash { padding: 10px 14px; background: #f0f7ff; margin: 8px 0; border-radius: 8px; }
+        @media (max-width: 650px) {
+            .coupon-form { grid-template-columns: 1fr; }
+            .coupon-page { padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <a href="{{ url_for('admin_reports') }}">FAST MART Admin</a>
+        <nav>
+            <a href="{{ url_for('admin_reports') }}">Dashboard</a>
+            <a href="{{ url_for('admin_products_page') }}">Products</a>
+            <a href="{{ url_for('admin_coupons') }}">Coupons</a>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <main class="coupon-page">
+        <h1>Coupon Management</h1>
+        <p>Create promotional codes and control their usage.</p>
+
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}
+                <div class="coupon-flash">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <section class="coupon-panel">
+            <h2>Create a Coupon</h2>
+            <form class="coupon-form" method="POST"
+                  action="{{ url_for('admin_coupon_create') }}">
+
+                <div>
+                    <label for="code">Coupon code</label>
+                    <input id="code" name="code" maxlength="40"
+                           placeholder="Example: WELCOME10"
+                           pattern="[A-Za-z0-9_-]+"
+                           title="Use letters, numbers, hyphens, or underscores"
+                           required>
+                </div>
+
+                <div>
+                    <label for="discount_type">Discount type</label>
+                    <select id="discount_type" name="discount_type" required>
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed amount (₹)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="discount_value">Discount value</label>
+                    <input id="discount_value" name="discount_value"
+                           type="number" min="0.01" step="0.01" required>
+                </div>
+
+                <div>
+                    <label for="minimum_order">Minimum order (₹)</label>
+                    <input id="minimum_order" name="minimum_order"
+                           type="number" min="0" step="0.01" value="0" required>
+                </div>
+
+                <div>
+                    <label for="max_discount">Maximum discount (₹, optional)</label>
+                    <input id="max_discount" name="max_discount"
+                           type="number" min="0.01" step="0.01"
+                           placeholder="Percentage coupons only">
+                </div>
+
+                <div>
+                    <label for="usage_limit">Total usage limit (optional)</label>
+                    <input id="usage_limit" name="usage_limit"
+                           type="number" min="1" step="1"
+                           placeholder="Example: 100">
+                </div>
+
+                <div>
+                    <label for="expires_at">Expiration date and time (optional)</label>
+                    <input id="expires_at" name="expires_at"
+                           type="datetime-local">
+                </div>
+
+                <div style="align-self:end">
+                    <button type="submit" class="btn-primary">
+                        Create Coupon
+                    </button>
+                </div>
+            </form>
+            <p>Leave usage limit or expiration empty for no limit on that setting.</p>
+        </section>
+
+        <section class="coupon-panel">
+            <h2>Existing Coupons</h2>
+            <div class="coupon-table-wrap">
+                <table class="coupon-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Discount</th>
+                            <th>Minimum Order</th>
+                            <th>Max Discount</th>
+                            <th>Usage</th>
+                            <th>Expires</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for coupon in coupons %}
+                        <tr>
+                            <td><strong>{{ coupon.code }}</strong></td>
+                            <td>
+                                {% if coupon.discount_type == 'percentage' %}
+                                    {{ coupon.discount_value }}%
+                                {% else %}
+                                    ₹{{ coupon.discount_value }}
+                                {% endif %}
+                            </td>
+                            <td>₹{{ coupon.minimum_order }}</td>
+                            <td>
+                                {% if coupon.max_discount is not none %}
+                                    ₹{{ coupon.max_discount }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ coupon.used_count }} /
+                                {{ coupon.usage_limit if coupon.usage_limit is not none else '∞' }}
+                            </td>
+                            <td>
+                                {{ coupon.expires_at.strftime('%d-%m-%Y %H:%M')
+                                   if coupon.expires_at else 'No expiry' }}
+                            </td>
+                            <td>
+                                {% if coupon.is_active %}
+                                    <span class="coupon-active">Active</span>
+                                {% else %}
+                                    <span class="coupon-inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="POST"
+                                      action="{{ url_for('admin_coupon_toggle', coupon_id=coupon.id) }}">
+                                    <input type="hidden" name="is_active"
+                                           value="{{ 0 if coupon.is_active else 1 }}">
+                                    <button type="submit">
+                                        {{ 'Deactivate' if coupon.is_active else 'Activate' }}
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="8">No coupons created yet.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <p><a href="{{ url_for('admin_reports') }}">← Back to Admin Dashboard</a></p>
+    </main>
+</body>
+</html>

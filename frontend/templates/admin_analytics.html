@@ -1,0 +1,345 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FAST MART | Sales Analytics</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f5f7fb;
+            color: #1f2937;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background: #ffffff;
+            padding: 18px 5%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 12px #0000000d;
+        }
+
+        .navbar > a {
+            color: #16a34a;
+            font-size: 23px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .navbar nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .navbar nav a {
+            color: #374151;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .navbar nav a:hover {
+            color: #16a34a;
+        }
+
+        .analytics-page {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 16px;
+        }
+
+        .analytics-page h1 {
+            margin-bottom: 25px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fit, minmax(190px, 1fr)
+            );
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .stat-card,
+        .analytics-card {
+            background: #ffffff;
+            padding: 22px;
+            border-radius: 14px;
+            box-shadow: 0 3px 14px #0000000d;
+            margin-bottom: 20px;
+        }
+
+        .stat-card p {
+            color: #6b7280;
+            margin: 0 0 12px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #15803d;
+            overflow-wrap: anywhere;
+        }
+
+        .chart-wrap {
+            position: relative;
+            height: 320px;
+            width: 100%;
+        }
+
+        .analytics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .analytics-table th,
+        .analytics-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .analytics-table th {
+            background: #f9fafb;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .error-message {
+            display: none;
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 14px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .navbar {
+                align-items: flex-start;
+            }
+
+            .navbar nav {
+                gap: 12px;
+            }
+
+            .analytics-page {
+                margin-top: 15px;
+                padding: 12px;
+            }
+
+            .chart-wrap {
+                height: 260px;
+            }
+
+            .stat-card,
+            .analytics-card {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="navbar">
+    <a href="{{ url_for('admin_dashboard') }}">FAST MART Admin</a>
+
+    <nav>
+        <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('admin_products_page') }}">Products</a>
+        <a href="{{ url_for('admin_deliveries') }}">Deliveries</a>
+        <a href="{{ url_for('admin_analytics') }}">Analytics</a>
+    </nav>
+</header>
+
+<main class="analytics-page">
+    <h1>Sales &amp; Delivery Analytics</h1>
+
+    <div id="analytics-error" class="error-message">
+        Unable to display analytics charts. Check the browser console.
+    </div>
+
+    <section class="stats-grid">
+        <article class="stat-card">
+            <p>Total Orders</p>
+            <div class="stat-value">
+                {{ analytics.summary.total_orders or 0 }}
+            </div>
+        </article>
+
+        <article class="stat-card">
+            <p>Non-cancelled Order Value</p>
+            <div class="stat-value">
+                ₹{{ "%.2f"|format(analytics.summary.total_sales or 0) }}
+            </div>
+        </article>
+
+        <article class="stat-card">
+            <p>Delivered Orders</p>
+            <div class="stat-value">
+                {{ analytics.summary.delivered_orders or 0 }}
+            </div>
+        </article>
+
+        <article class="stat-card">
+            <p>Cancelled Orders</p>
+            <div class="stat-value">
+                {{ analytics.summary.cancelled_orders or 0 }}
+            </div>
+        </article>
+    </section>
+
+    <section class="analytics-card">
+        <h2>Daily Order Value — Last 7 Days</h2>
+        <div class="chart-wrap">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </section>
+
+    <section class="analytics-card">
+        <h2>Best-Selling Products</h2>
+
+        <div class="chart-wrap">
+            <canvas id="productsChart"></canvas>
+        </div>
+
+        <div class="table-wrap">
+            <table class="analytics-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Units Sold</th>
+                        <th>Order Value</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for product in analytics.best_sellers %}
+                    <tr>
+                        <td>{{ product.name }}</td>
+                        <td>{{ product.units_sold }}</td>
+                        <td>
+                            ₹{{ "%.2f"|format(product.product_revenue or 0) }}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3">No sales data yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section class="analytics-card">
+        <h2>Delivery Status</h2>
+        <div class="chart-wrap">
+            <canvas id="deliveryChart"></canvas>
+        </div>
+    </section>
+</main>
+
+<!-- Jinja data blocks must appear before the main JavaScript. -->
+<script id="daily-sales-data" type="application/json">{{ analytics.daily_sales | tojson }}</script>
+<script id="best-sellers-data" type="application/json">{{ analytics.best_sellers | tojson }}</script>
+<script id="delivery-stats-data" type="application/json">{{ analytics.delivery_stats | tojson }}</script>
+
+<script>
+    function readJsonData(elementId) {
+        const element = document.getElementById(elementId);
+
+        if (!element) {
+            throw new Error("Missing analytics data element: " + elementId);
+        }
+
+        return JSON.parse(element.textContent || "[]");
+    }
+
+    try {
+        const dailySales = readJsonData("daily-sales-data");
+        const bestSellers = readJsonData("best-sellers-data");
+        const deliveryStats = readJsonData("delivery-stats-data");
+
+        new Chart(document.getElementById("salesChart"), {
+            type: "line",
+            data: {
+                labels: dailySales.map(item =>
+                    String(item.sale_date).slice(0, 10)
+                ),
+                datasets: [{
+                    label: "Order value (₹)",
+                    data: dailySales.map(item => Number(item.sales || 0)),
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        new Chart(document.getElementById("productsChart"), {
+            type: "bar",
+            data: {
+                labels: bestSellers.map(item => item.name),
+                datasets: [{
+                    label: "Units sold",
+                    data: bestSellers.map(item =>
+                        Number(item.units_sold || 0)
+                    )
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: "y"
+            }
+        });
+
+        new Chart(document.getElementById("deliveryChart"), {
+            type: "doughnut",
+            data: {
+                labels: deliveryStats.map(item => item.status),
+                datasets: [{
+                    label: "Deliveries",
+                    data: deliveryStats.map(item =>
+                        Number(item.delivery_count || 0)
+                    )
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+    } catch (error) {
+        console.error("FAST MART analytics error:", error);
+        document.getElementById("analytics-error").style.display = "block";
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+
+Flask
+mysql-connector-python
+python-dotenv
+gunicorn
+razorpay
+Pillow
+requests

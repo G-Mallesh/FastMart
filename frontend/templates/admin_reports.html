@@ -1,0 +1,204 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAST MART - Admin Reports</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .report-container {
+            max-width: 1150px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .report-card, .report-section {
+            border: 1px solid #dbe3ef;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #fff;
+            color: #172033;
+        }
+
+        .report-card h3 {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .report-card p {
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 0;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .report-table th, .report-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        .report-table th {
+            background: #f1f5f9;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        .report-button {
+            padding: 8px 12px;
+            background: #2563eb;
+            color: white;
+            border: 0;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .warning {
+            color: #b45309;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            .report-container { padding: 12px; }
+            .report-card, .report-section { padding: 14px; }
+        }
+    </style>
+</head>
+<body>
+<main class="report-container">
+    <h1>FAST MART Admin Reports</h1>
+
+    <p>
+        <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+        |
+        <a href="{{ url_for('admin_products_page') }}">Manage Products</a>
+        |
+        <a href="{{ url_for('admin_deliveries') }}">Assign Delivery Workers</a>
+    </p>
+
+    <section class="report-grid">
+        <div class="report-card">
+            <h3>Total Orders</h3>
+            <p>{{ report.summary.total_orders or 0 }}</p>
+        </div>
+        <div class="report-card">
+            <h3>Paid Revenue (Delivered)</h3>
+            <p>₹{{ "%.2f"|format(report.summary.paid_revenue or 0) }}</p>
+        </div>
+        <div class="report-card">
+            <h3>Pending Orders</h3>
+            <p>{{ report.summary.pending_orders or 0 }}</p>
+        </div>
+        <div class="report-card">
+            <h3>Packed Orders</h3>
+            <p>{{ report.summary.packed_orders or 0 }}</p>
+        </div>
+        <div class="report-card">
+            <h3>Out for Delivery</h3>
+            <p>{{ report.summary.out_for_delivery_orders or 0 }}</p>
+        </div>
+        <div class="report-card">
+            <h3>Delivered Orders</h3>
+            <p>{{ report.summary.delivered_orders or 0 }}</p>
+        </div>
+    </section>
+
+    <section class="report-section">
+        <h2>Low-Stock Alerts</h2>
+
+        {% if report.low_stock_products %}
+            <div class="table-wrap">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Stock Remaining</th>
+                            <th>Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for product in report.low_stock_products %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td class="warning">{{ product.stock_quantity }}</td>
+                            <td>₹{{ "%.2f"|format(product.price) }}</td>
+                            <td>
+                                <a href="{{ url_for('edit_product', product_id=product.id) }}">
+                                    Restock Product
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p>All active products have at least 10 units in stock.</p>
+        {% endif %}
+    </section>
+
+    <section class="report-section">
+        <h2>Recent Orders</h2>
+
+        <div class="table-wrap">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Order Status</th>
+                        <th>Payment</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for order in report.recent_orders %}
+                    <tr>
+                        <td>#{{ order.order_id }}</td>
+                        <td>{{ order.customer_name or 'Guest' }}</td>
+                        <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+                        <td>{{ order.order_status|replace('_', ' ')|title }}</td>
+                        <td>{{ order.payment_status|title }}</td>
+                        <td>
+                            {% if order.order_status == 'confirmed' %}
+                                <form method="POST"
+                                      action="{{ url_for('admin_pack_order', order_id=order.order_id) }}">
+                                    <button class="report-button" type="submit">
+                                        Mark Packed
+                                    </button>
+                                </form>
+                            {% else %}
+                                —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="6">No orders found.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

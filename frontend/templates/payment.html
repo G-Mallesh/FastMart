@@ -1,0 +1,292 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAST MART | Secure Payment</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #172033;
+        }
+
+        .payment-header {
+            background: #ffffff;
+            padding: 20px 7%;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .brand {
+            margin: 0;
+            color: #0f172a;
+            font-size: 30px;
+            font-weight: 800;
+        }
+
+        .brand span {
+            color: #16a34a;
+        }
+
+        .payment-container {
+            width: min(460px, calc(100% - 40px));
+            box-sizing: border-box;
+            margin: 55px auto;
+            padding: 32px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 18px;
+            box-shadow: 0 12px 35px rgba(15, 23, 42, 0.08);
+        }
+
+        .secure-label {
+            display: inline-block;
+            padding: 8px 12px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .payment-container h2 {
+            margin: 20px 0 8px;
+            font-size: 25px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            line-height: 1.6;
+        }
+
+        .order-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin: 20px 0;
+            color: #475569;
+        }
+
+        .order-row strong {
+            color: #172033;
+            text-align: right;
+        }
+
+        .amount-box {
+            margin: 24px 0;
+            padding: 22px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+
+        .amount-label {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .amount {
+            display: block;
+            margin-top: 8px;
+            font-size: 32px;
+            font-weight: 800;
+            color: #15803d;
+        }
+
+        #payButton {
+            width: 100%;
+            padding: 15px;
+            border: 0;
+            border-radius: 10px;
+            background: #16a34a;
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #payButton:hover {
+            background: #15803d;
+        }
+
+        #payButton:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #paymentMessage {
+            min-height: 22px;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 20px;
+            color: #2563eb;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .security-note {
+            margin-top: 25px;
+            color: #64748b;
+            font-size: 12px;
+            line-height: 1.6;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .payment-container {
+                margin: 25px auto;
+                padding: 23px;
+            }
+
+            .payment-header {
+                padding: 18px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="payment-header">
+        <h1 class="brand">FAST <span>MART</span></h1>
+    </header>
+
+    <main class="payment-container">
+        <span class="secure-label">Secure checkout</span>
+
+        <h2>Complete Your Payment</h2>
+        <p class="subtitle">
+            Review your order total and continue to the secure payment window.
+        </p>
+
+        <div class="order-row">
+            <span>Order number</span>
+            <strong>{{ order_id }}</strong>
+        </div>
+
+        <div class="amount-box">
+            <span class="amount-label">Total amount</span>
+            <strong class="amount">
+                ₹{{ "%.2f"|format(amount_paise / 100) }}
+            </strong>
+        </div>
+
+        <button id="payButton" type="button">Pay Securely</button>
+        <p id="paymentMessage" role="status" aria-live="polite"></p>
+
+        <a class="back-link" href="{{ url_for('checkout') }}">
+            ← Return to checkout
+        </a>
+
+        <p class="security-note">
+            Your payment is processed through Razorpay. Never share your
+            OTP, PIN, or payment credentials with anyone.
+        </p>
+    </main>
+
+    <script>
+        const payButton = document.getElementById("payButton");
+        const paymentMessage = document.getElementById("paymentMessage");
+
+        const options = {
+            key: {{ key_id | tojson }},
+            amount: {{ amount_paise | tojson }},
+            currency: "INR",
+            name: "FAST MART",
+            description: "Supermarket order",
+            order_id: {{ razorpay_order_id | tojson }},
+            prefill: {
+                name: {{ customer_name | tojson }}
+            },
+            theme: {
+                color: "#16a34a"
+            },
+
+            handler: async function (response) {
+                payButton.disabled = true;
+                paymentMessage.textContent = "Verifying payment...";
+
+                try {
+                    const result = await fetch(
+                        {{ url_for('verify_online_payment') | tojson }},
+                        {
+                            method: "POST",
+                            credentials: "same-origin",
+                            headers: {
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify(response)
+                        }
+                    );
+
+                    const data = await result.json();
+
+                    if (result.ok && data.success && data.redirect_url) {
+                        window.location.assign(data.redirect_url);
+                        return;
+                    }
+
+                    paymentMessage.textContent =
+                        data.message ||
+                        "Payment verification failed. Please check your order status.";
+                } catch (error) {
+                    paymentMessage.textContent =
+                        "We could not confirm the payment response. Check your order status before retrying.";
+                }
+
+                payButton.disabled = false;
+            },
+
+            modal: {
+                ondismiss: function () {
+                    paymentMessage.textContent =
+                        "Payment window closed. Check your order status before retrying.";
+                    payButton.disabled = false;
+                }
+            }
+        };
+
+        payButton.addEventListener("click", function () {
+            if (typeof window.Razorpay !== "function") {
+                paymentMessage.textContent =
+                    "Razorpay could not load. Check your internet connection and try again.";
+                return;
+            }
+
+            payButton.disabled = true;
+
+            try {
+                const checkout = new Razorpay(options);
+
+                checkout.on("payment.failed", function () {
+                    paymentMessage.textContent =
+                        "Payment failed. Check your order status before retrying.";
+                    payButton.disabled = false;
+                });
+
+                checkout.open();
+            } catch (error) {
+                paymentMessage.textContent =
+                    "Unable to open payment checkout. Please try again.";
+                payButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

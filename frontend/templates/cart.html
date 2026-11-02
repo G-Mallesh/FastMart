@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your Cart - FAST MART</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background: #101827;
+            color: #f8fafc;
+            font-family: Arial, sans-serif;
+        }
+
+        main { max-width: 850px; margin: auto; }
+
+        .item, .bill {
+            background: #1d2a40;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 12px;
+        }
+
+        .item form {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        input, button {
+            padding: 10px;
+            border-radius: 7px;
+            border: 0;
+        }
+
+        input { width: 85px; }
+
+        button {
+            background: #55f2a5;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .remove { background: #fecaca; }
+
+        .amount { color: #55f2a5; }
+
+        .back { color: #55f2a5; }
+
+        .message { color: #fbbf24; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>🛒 Your FAST MART Cart</h1>
+    <a class="back" href="/">← Continue Shopping</a>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <p class="message">{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if items %}
+        <p>Total units: {{ total_items }}</p>
+
+        {% for item in items %}
+        <section class="item">
+            <h3>{{ item.name }}</h3>
+            <p>Price per unit:
+                ₹{{ "%.2f"|format(item.price) }}
+            </p>
+            <p>Available stock: {{ item.stock }}</p>
+            <p>Line total:
+                <strong class="amount">
+                    ₹{{ "%.2f"|format(item.line_total) }}
+                </strong>
+            </p>
+
+            <form method="POST"
+                  action="{{ url_for('cart_update', product_id=item.id) }}">
+                <label>
+                    Quantity
+                    <input type="number" name="quantity"
+                           min="1" max="{{ item.stock }}"
+                           value="{{ item.quantity }}" required>
+                </label>
+                <button type="submit">Update Quantity</button>
+            </form>
+
+            <form method="POST"
+                  action="{{ url_for('cart_remove', product_id=item.id) }}">
+                <button class="remove" type="submit">Remove Item</button>
+            </form>
+        </section>
+        {% endfor %}
+
+        <section class="bill">
+            <h2>Order Summary</h2>
+            <p>Subtotal:
+                ₹{{ "%.2f"|format(subtotal) }}
+            </p>
+            <p>Delivery fee: Calculated at checkout</p>
+            <h2 class="amount">
+                Current total: ₹{{ "%.2f"|format(subtotal) }}
+            </h2>
+            <p>Delivery fee is not included yet.</p>
+         
+<a href="{{ url_for('checkout') }}">
+    <button type="button">Proceed to Checkout</button>
+</a>
+
+        </section>
+    {% else %}
+        <section class="item">
+            <h2>Your cart is empty</h2>
+            <p>Add some supermarket products to get started.</p>
+            <a class="back" href="/">Browse Products</a>
+        </section>
+    {% endif %}
+</main>
+</body>
+</html>

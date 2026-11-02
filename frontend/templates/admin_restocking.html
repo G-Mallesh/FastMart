@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Supplier & Restocking | FAST MART</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f6f3;
+            color: #1f2937;
+            margin: 0;
+            padding: 20px;
+        }
+        main { max-width: 1100px; margin: auto; }
+        h1, h2 { color: #176b37; }
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 22px;
+        }
+        .fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap: 12px;
+        }
+        input, select {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+        button {
+            padding: 11px 15px;
+            border: 0;
+            border-radius: 6px;
+            color: white;
+            background: #176b37;
+            cursor: pointer;
+        }
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            min-width: 750px;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th { background: #eef7ef; }
+        .status { font-weight: bold; }
+        .empty { color: #64748b; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>FAST MART — Supplier & Restocking</h1>
+
+    <section class="panel">
+        <h2>Add Supplier</h2>
+        <form method="POST" action="{{ url_for('admin_add_supplier') }}">
+            <div class="fields">
+                <input name="supplier_name"
+                       placeholder="Supplier name" required maxlength="150">
+                <input name="phone"
+                       placeholder="Phone" maxlength="20">
+                <input name="email"
+                       type="email" placeholder="Email" maxlength="150">
+                <input name="address"
+                       placeholder="Address" maxlength="500">
+            </div>
+            <p><button type="submit">Add Supplier</button></p>
+        </form>
+    </section>
+
+    <section class="panel">
+        <h2>Create Restocking Order</h2>
+
+        {% if suppliers and products %}
+        <form method="POST"
+              action="{{ url_for('admin_create_restock') }}">
+            <div class="fields">
+                <select name="supplier_id" required>
+                    <option value="">Select supplier</option>
+                    {% for supplier in suppliers %}
+                    <option value="{{ supplier.id }}">
+                        {{ supplier.supplier_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <select name="product_id" required>
+                    <option value="">Select product</option>
+                    {% for product in products %}
+                    <option value="{{ product.id }}">
+                        {{ product.name }} — Stock: {{ product.stock_quantity }}
+                    </option>
+                    {% endfor %}
+                </select>
+
+                <input type="number" name="quantity"
+                       min="1" max="2147483647"
+                       placeholder="Quantity to order" required>
+
+                <input type="number" name="unit_cost"
+                       min="0" max="99999999.99"
+                       step="0.01" placeholder="Unit cost (₹)" required>
+
+                <input name="reference_number"
+                       maxlength="100"
+                       placeholder="Purchase reference (optional)">
+            </div>
+            <p>
+                <button type="submit">Create Purchase Order</button>
+            </p>
+        </form>
+        {% else %}
+        <p class="empty">
+            Add an active supplier and make sure active products exist
+            before creating a restocking order.
+        </p>
+        {% endif %}
+    </section>
+
+    <section class="panel">
+        <h2>Restocking History</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Supplier</th>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Unit Cost</th>
+                        <th>Reference</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.supplier_name }}</td>
+                        <td>{{ order.product_name }}</td>
+                        <td>{{ order.quantity }}</td>
+                        <td>₹{{ "%.2f"|format(order.unit_cost) }}</td>
+                        <td>{{ order.reference_number or "—" }}</td>
+                        <td class="status">{{ order.status }}</td>
+                        <td>
+                            {% if order.status == "ordered" %}
+                            <form method="POST"
+                                  action="{{ url_for(
+                                      'admin_receive_restock',
+                                      restock_id=order.id
+                                  ) }}">
+                                <button type="submit">Receive Stock</button>
+                            </form>
+                            {% else %}
+                            —
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="8">No restocking orders yet.</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <p><a href="{{ url_for('admin') }}">Back to Admin Dashboard</a></p>
+</main>
+</body>
+</html>

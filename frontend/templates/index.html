@@ -1,0 +1,247 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FAST MART - 3D Virtual Supermarket</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #101827;
+            color: #f8fafc;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            background: #19263b;
+            padding: 20px 6%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        header h1 { margin: 0; color: #55f2a5; }
+
+        a { color: inherit; text-decoration: none; }
+
+        .cart-link {
+            background: #55f2a5;
+            color: #102018;
+            padding: 12px 18px;
+            border-radius: 9px;
+            font-weight: bold;
+        }
+
+        main { padding: 30px 6%; }
+
+        .hero {
+            background: linear-gradient(120deg, #214453, #34245b);
+            padding: 30px;
+            border-radius: 18px;
+            margin-bottom: 30px;
+        }
+
+        .hero h2 { font-size: clamp(26px, 4vw, 40px); }
+
+        #products {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 18px;
+        }
+
+        .product {
+            background: #1d2a40;
+            padding: 20px;
+            border-radius: 14px;
+        }
+
+        .product h3 { margin-top: 0; }
+
+        .price { color: #55f2a5; font-size: 20px; }
+
+        .stock { color: #cbd5e1; }
+
+        button {
+            width: 100%;
+            border: 0;
+            border-radius: 8px;
+            padding: 12px;
+            background: #55f2a5;
+            color: #102018;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+
+        .message { color: #fbbf24; }
+        .product-image {
+     display: block;
+    width: 100%;
+    height: 180px;
+    object-fit: contain;
+    background: #ffffff;
+    border-radius: 10px;
+    margin-bottom: 15px;
+        }
+        .product-image-placeholder {
+    width: 100%;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    color: #64748b;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+    </style>
+</head>
+<body>
+<header>
+    <h1>FAST MART</h1>
+    {% if session.get('user_id') %}
+    <p>Welcome, {{ session.get('name') }}! ♡</p>
+    <form action="{{ url_for('logout') }}" method="POST">
+        <button type="submit">Logout</button>
+    </form>
+{% endif %}
+ 
+    <a href="{{ url_for('login') }}"> 👤 Login</a>
+<a href="{{ url_for('register') }}">💳Register</a>
+    <a class="cart-link" href="/cart">🛒 View Cart</a>
+   {% if session.get('role') == 'customer' %}
+    <a href="{{ url_for('my_orders') }}">📦  My Orders</a>
+    <a href="{{ url_for('recommendations') }}"> ♡ Recommended For You</a>
+{% endif %}
+<a href="/market">🛍️ Enter 3D Market ♡</a>
+<a href="{{ url_for('my_notifications') }}">🔔 Notifications</a>
+<a href="{{ url_for('customer_support') }}">📞 Customer Support</a>
+<a href="{{ url_for('customer_rewards') }}">💬 My Rewards</a>
+
+</header>
+
+<main>
+    <section class="hero">
+        <h2>Your Virtual Supermarket</h2>
+        <p>Explore products, check stock and add your favourites to the cart.</p>
+        <p>Our interactive 3D market is coming in a later step.</p>
+    </section>
+
+    <h2>Available Products</h2>
+    <p id="status">Loading products...</p>
+    <section id="products"></section>
+</main>
+
+<script>
+async function loadProducts() {
+    const container = document.getElementById("products");
+    const status = document.getElementById("status");
+
+    try {
+        const response = await fetch("/api/products");
+
+        if (!response.ok) {
+            throw new Error("Products unavailable");
+        }
+
+        const products = await response.json();
+        container.replaceChildren();
+
+        status.textContent = products.length
+            ? `${products.length} products available`
+            : "No products found. Add products in the admin panel.";
+
+        products.forEach(product => {
+            const card = document.createElement("article");
+            card.className = "product";
+
+            // Product image
+            const imageUrl = (product.image_url || "").trim();
+
+            if (imageUrl) {
+                const image = document.createElement("img");
+                image.className = "product-image";
+                image.alt = product.name || "Product image";
+                image.loading = "lazy";
+
+                // Support uploaded files and external URLs.
+                if (/^https?:\/\//i.test(imageUrl)) {
+                    image.src = imageUrl;
+                } else {
+                    const cleanPath = imageUrl.replace(/^\/+/, "");
+                    image.src = cleanPath.startsWith("static/")
+                        ? "/" + cleanPath
+                        : "/static/" + cleanPath;
+                }
+
+                // Show a placeholder if the image cannot load.
+                image.addEventListener("error", function () {
+                    const placeholder = document.createElement("div");
+                    placeholder.className = "product-image-placeholder";
+                    placeholder.textContent = "Image unavailable";
+                    image.replaceWith(placeholder);
+                }, { once: true });
+
+                card.appendChild(image);
+            } else {
+                const placeholder = document.createElement("div");
+                placeholder.className = "product-image-placeholder";
+                placeholder.textContent = "No image available";
+                card.appendChild(placeholder);
+            }
+
+            const name = document.createElement("h3");
+            name.textContent = product.name || "Unnamed product";
+
+            const category = document.createElement("p");
+            category.textContent = product.category || "General";
+
+            const price = document.createElement("p");
+            price.className = "price";
+            price.textContent = `₹${Number(product.price || 0).toFixed(2)}`;
+
+            const stock = document.createElement("p");
+            stock.className = "stock";
+            stock.textContent =
+                `Available stock: ${Number(product.stock_quantity || 0)}`;
+
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = `/cart/add/${encodeURIComponent(product.id)}`;
+
+            const button = document.createElement("button");
+            button.type = "submit";
+            button.textContent = Number(product.stock_quantity) > 0
+                ? "Add to Cart"
+                : "Out of Stock";
+            button.disabled = Number(product.stock_quantity) <= 0;
+
+            form.appendChild(button);
+
+            card.append(name, category, price, stock, form);
+            container.appendChild(card);
+        });
+
+    } catch (error) {
+        status.textContent =
+            "Could not load products. Check Flask, MySQL, and /api/products.";
+        console.error("Product loading error:", error);
+    }
+}
+
+loadProducts();
+</script>
+
+
+</body>
+</html>

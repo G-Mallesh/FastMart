@@ -1,0 +1,231 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FAST MART Admin</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background: #101827;
+            color: #f8fafc;
+            font-family: Arial, sans-serif;
+        }
+
+        main { max-width: 1250px; margin: auto; }
+
+        h1, h2 { color: #55f2a5; }
+
+        a { color: #55f2a5; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+        }
+
+        .card, .panel {
+            background: #1d2a40;
+            padding: 18px;
+            border-radius: 12px;
+            margin: 16px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .number {
+            font-size: 26px;
+            font-weight: bold;
+            color: #55f2a5;
+        }
+
+        .table-wrap { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 650px;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #40516b;
+            text-align: left;
+        }
+
+        input {
+            width: 90px;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        button {
+            padding: 9px 12px;
+            border: 0;
+            border-radius: 6px;
+            background: #55f2a5;
+            color: #102018;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .message { color: #ffd166; }
+        .muted { color: #b6c4d9; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>FAST MART Admin Dashboard</h1>
+    <p>Manage your virtual supermarket.</p>
+    <p>
+        <a href="/"> 🛒 Store</a>
+        {% if session.get('user_id') %}
+        &nbsp; | &nbsp;
+        <form action="{{ url_for('logout') }}" method="POST"
+              style="display:inline">
+            <button type="submit"> 👤 Logout</button>
+            <p>
+    <a href="{{ url_for('admin_reports') }}"> 🛒Sales & Order Reports</a>
+  
+</a>
+<a href="{{ url_for('admin_restocking') }}">
+    Supplier & Restocking Management
+</a>
+</p>
+        </form>
+        {% endif %}
+    </p>
+
+    {% with messages = get_flashed_messages() %}
+      {% for message in messages %}
+        <p class="message">{{ message }}</p>
+      {% endfor %}
+    <p>
+    <a href="{{ url_for('admin_products_page') }}">
+        ♡ 📦 Manage Products..
+    </a>
+
+     ♡
+
+    <a href="{{ url_for('admin_deliveries') }}">
+        👤Assign Delivery Workers..
+    </a>
+     ♡ 
+      <a href="{{ url_for('admin_coupons') }}" class="btn-primary">
+    Manage Coupons..
+      </a>
+         ♡ 
+      <a href="{{ url_for('admin_analytics') }}"> 📦 Analytics..</a>
+      
+    <a href="{{ url_for('admin_complaints') }}"> 💬 Manage Complaints..</a>
+ <a href="{{ url_for('admin_low_stock') }}">
+    Low Stock Alerts
+</a>  
+</p>
+
+    {% endwith %}
+
+    <section class="stats">
+        <div class="card">
+            <p>Customers</p>
+            <div class="number">{{ summary.customers }}</div>
+        </div>
+        <div class="card">
+            <p>Delivery Workers</p>
+            <div class="number">{{ summary.workers }}</div>
+        </div>
+        <div class="card">
+            <p>Active Products</p>
+            <div class="number">{{ summary.products }}</div>
+        </div>
+        <div class="card">
+            <p>Active Orders</p>
+            <div class="number">{{ summary.active_orders }}</div>
+        </div>
+        <div class="card">
+            <p>Paid Revenue from Delivered Orders</p>
+            <div class="number">₹{{ "%.2f"|format(summary.revenue) }}</div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Product Inventory</h2>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Product</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Update Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for product in products %}
+                <tr>
+                    <td>{{ product.id }}</td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.category or 'Uncategorized' }}</td>
+                    <td>₹{{ "%.2f"|format(product.price) }}</td>
+                    <td>{{ product.stock_quantity }}</td>
+                    <td>
+                        <form method="POST"
+                              action="{{ url_for('admin_update_stock',
+                                                 product_id=product.id) }}">
+                            <input type="number" name="stock_quantity"
+                                   min="0" max="1000000"
+                                   value="{{ product.stock_quantity }}"
+                                   required>
+                            <button type="submit">Save</button>
+                        </form>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6">No products found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>Recent Orders</h2>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Customer</th>
+                    <th>Total</th>
+                    <th>Order Status</th>
+                    <th>Payment</th>
+                    <th>Delivery</th>
+                    <th>Worker</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>#{{ order.order_id }}</td>
+                    <td>{{ order.customer_name or 'Guest' }}</td>
+                    <td>₹{{ "%.2f"|format(order.total_amount) }}</td>
+                    <td>{{ order.order_status|replace('_', ' ')|title }}</td>
+                    <td>{{ order.payment_status|title }}</td>
+                    <td>{{ (order.delivery_status or 'N/A')|replace('_', ' ')|title }}</td>
+                    <td>{{ order.worker_name or 'Unassigned' }}</td>
+                </tr>
+            {% else %}
+                <tr><td colspan="7">No orders found.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

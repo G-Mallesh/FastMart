@@ -1,0 +1,591 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAST MART | 3D Market</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #0d1524;
+            color: #f1f5f9;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            padding: 15px 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            background: #17243a;
+        }
+
+        header h1 {
+            margin: 0;
+            color: #55f2a5;
+        }
+
+        a {
+            color: #55f2a5;
+            text-decoration: none;
+        }
+
+        .shop-search {
+            padding: 20px;
+            background: #240c83;
+            color: #f8feff;
+        }
+
+        .shop-search h2 {
+            margin-top: 0;
+        }
+
+        .shop-search p {
+            color: #64748b;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 12px;
+            max-width: 650px;
+        }
+
+        .search-form input,
+        .search-form select {
+            min-width: 0;
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+            color: #17243a;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 290px;
+            min-height: calc(100vh - 65px);
+        }
+
+        #market3d {
+            position: relative;
+            min-width: 0;
+            min-height: 570px;
+            overflow: hidden;
+            background: #172333;
+        }
+
+        #market3d canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .instructions {
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            z-index: 1;
+            padding: 10px 12px;
+            border-radius: 9px;
+            background: #101827dd;
+            line-height: 1.6;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        aside {
+            padding: 20px;
+            background: #17243a;
+        }
+
+        .product-card {
+            background: #23334c;
+            padding: 14px;
+            border-radius: 12px;
+            margin-top: 12px;
+        }
+
+        .price {
+            color: #55f2a5;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #55f2a5;
+            color: #102018;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background: #64748b;
+            cursor: not-allowed;
+        }
+
+        #message {
+            min-height: 35px;
+            color: #fbbf24;
+            font-size: 14px;
+        }
+
+        .category-label {
+            color: #a8bad0;
+            font-size: 13px;
+        }
+
+        /* Product image styles for catalog cards */
+        .catalog-products {
+            padding: 22px;
+            background: #0d1524;
+        }
+
+        .catalog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 18px;
+        }
+
+        .catalog-card {
+            padding: 14px;
+            border-radius: 12px;
+            background: #23334c;
+            overflow: hidden;
+        }
+
+        .catalog-card img {
+            display: block;
+            width: 100%;
+            height: 160px;
+            object-fit: contain;
+            background: #e9eef1;
+            border-radius: 8px;
+        }
+
+        .catalog-card h3 {
+            margin-bottom: 8px;
+        }
+
+        .catalog-card .price {
+            display: block;
+            margin-top: 8px;
+        }
+
+        .no-image {
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f6f9;
+            color: #64748b;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        @media (max-width: 760px) {
+        .layout {
+                grid-template-columns: 1fr;
+         }
+
+        #market3d {
+                min-height: 420px;
+            }
+        }
+
+        @media (max-width: 600px) {
+        .search-form {
+                flex-direction: column;
+            }
+        }
+        
+        .product-rating {
+         margin: 12px 0;
+         font-size: 14px;
+         color: #cbd5e1;
+        }
+
+        .rating-stars {
+         color: #fbbf24;
+         letter-spacing: 2px;
+         margin-right: 6px;
+        }
+
+        .catalog-card > a {
+        display: inline-block;
+        margin: 8px 0;
+        color: #55f2a5;
+        text-decoration: underline;
+        }
+        
+.search-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    width: 100%;
+    max-width: 1200px;
+}
+
+.search-form > div {
+    flex: 2 1 240px;
+    min-width: 200px;
+}
+
+.search-form input,
+.search-form select {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    padding: 12px;
+}
+
+.search-form button {
+    width: auto;
+    min-width: 100px;
+    margin-top: 0;
+}
+
+
+    </style>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
+        }
+    }
+    
+        
+
+    </script>
+</head>
+
+<body>
+
+<header>
+    <h1>FAST MART 3D</h1>
+
+    <nav>
+        <a href="/">Products</a>
+        &nbsp; | &nbsp;
+        <a href="/cart">🛒 Shopping Cart</a>
+        {% if session.get('role') == 'customer' %} | 
+
+
+    <a href="{{ url_for('wishlist_page') }}">♡ Wishlist</a>
+{% endif %}
+    </nav>
+</header>
+
+<!-- Product search -->
+<section class="shop-search">
+    
+
+
+    <h2>Shop Fresh Products</h2>
+    <p>Find your daily groceries in FAST MART.</p>
+
+    <div class="search-form">
+        <input
+            type="search"
+            id="productSearch"
+            placeholder="Search fruits, vegetables, milk..."
+            aria-label="Search products"
+        >
+
+        <select id="categoryFilter" aria-label="Filter by category">
+            <option value="">All categories</option>
+            <option value="fruits">Fruits</option>
+            <option value="vegetables">Vegetables</option>
+            <option value="dairy">Dairy</option>
+            <option value="snacks">Snacks</option>
+            <option value="beverages">Beverages</option>
+            <option value="household">Household</option>
+        </select>
+    </div>
+</section>
+
+<form action="{{ url_for('product_search') }}" method="GET"
+      class="search-form" id="product-search-form">
+
+    <div style="position:relative; flex:1; min-width:200px;">
+        <input
+            type="search"
+            id="product-search-input"
+            name="q"
+            placeholder="Search groceries..."
+            value="{{ search_query|default('') }}"
+            autocomplete="off"
+            aria-label="Search products">
+
+        <div id="search-suggestions"
+             role="listbox"
+             style="position:absolute;top:100%;left:0;right:0;
+                    z-index:1000;background:white;color:#222;
+                    box-shadow:0 4px 12px #0002;border-radius:8px;">
+        </div>
+    </div>
+
+    <select name="category_id" aria-label="Category">
+        <option value="">All categories</option>
+        {% for category in categories %}
+            <option value="{{ category.id }}"
+                {% if selected_category|string == category.id|string %}
+                    selected
+                {% endif %}>
+                {{ category.name }}
+            </option>
+        {% endfor %}
+    </select>
+
+    <input type="number" name="min_price"
+           min="0" step="0.01"
+           placeholder="Min ₹"
+           value="{{ min_price|default('') }}">
+
+    <input type="number" name="max_price"
+           min="0" step="0.01"
+           placeholder="Max ₹"
+           value="{{ max_price|default('') }}">
+
+    <button type="submit">Search</button>
+    <a href="{{ url_for('market') }}">Clear</a>
+</form>
+
+<!-- Product catalog with uploaded and external images -->
+<section class="catalog-products">
+    <h2>Our Products</h2>
+
+    <div class="catalog-grid" id="catalogGrid">
+        {% for product in products %}
+            <article
+                class="catalog-card"
+                data-name="{{ product.name|lower|e }}"
+                data-category="{{ (product.category_name if product.category_name is defined else '')|lower|e }}"
+            >
+                {% if product.image_url %}
+                    {% if product.image_url.startswith('http://') or product.image_url.startswith('https://') %}
+                        <img
+                            src="{{ product.image_url }}"
+                            alt="{{ product.name }}"
+                            loading="lazy"
+                        >
+                    {% else %}
+                        <img
+                            src="{{ url_for('static', filename=product.image_url) }}"
+                            alt="{{ product.name }}"
+                            loading="lazy"
+                        >
+                    {% endif %}
+                {% else %}
+                    <div class="no-image">No image available</div>
+                {% endif %}
+
+                <h3>{{ product.name }}</h3>
+
+                {% if product.description %}
+                    <p>{{ product.description }}</p>
+                {% endif %}
+                 
+
+                <span class="price">₹{{ product.price }}</span>
+                
+        <div class="product-rating">
+        {% if product.review_count %}
+           <span class="rating-stars">
+            {% for n in range(1, 6) %}
+           {{ '★' if n <= (product.average_rating|round(0, 'floor')|int) else '☆' }}
+            {% endfor %}
+        </span>
+
+        <span>
+            {{ "%.1f"|format(product.average_rating) }}
+            ({{ product.review_count }} reviews)
+        </span>
+    {% else %}
+        <span>No reviews yet</span>
+    {% endif %}
+</div>
+<a class="review-button"
+   href="{{ url_for('product_detail', product_id=product.id) }}">
+    View Product &amp; Reviews
+</a>
+
+{% if session.get('role') == 'customer' %}
+    <form method="POST"
+          action="{{ url_for('wishlist_add_route', product_id=product.id) }}">
+        <button type="submit" class="wishlist-button">
+            ♡ Save to Wishlist
+        </button>
+    </form>
+{% endif %}
+
+  
+                {% if product.stock_quantity is defined %}
+                    <p class="category-label">
+                        Stock: {{ product.stock_quantity }}
+                    </p>
+                {% endif %}
+            </article>
+        {% else %}
+            <p>No products are available yet.</p>
+        {% endfor %}
+    </div>
+
+    <p id="noProductsMessage" hidden>
+        No matching products found.
+    </p>
+</section>
+
+<!-- Existing 3D supermarket -->
+<div class="layout">
+    <section id="market3d">
+        <div class="instructions">
+            🖱️ Drag to rotate view<br>
+            Scroll to zoom<br>
+            Click a product to select it
+        </div>
+    </section>
+
+    <aside>
+        <h2>Virtual Supermarket</h2>
+
+        <p class="category-label">
+            Explore the aisles and select a product.
+        </p>
+
+        <div id="selectedProduct" class="product-card">
+            <h3>Welcome shopper!</h3>
+            <p>Click a product on a shelf to see its details.</p>
+        </div>
+
+        <p id="message" role="status"></p>
+
+        <button id="addButton" disabled>Add to Cart</button>
+
+        <button onclick="location.href='/cart'">
+            View Shopping Cart
+        </button>
+
+        <p class="category-label">
+            Products and stock are loaded from MySQL.
+        </p>
+    </aside>
+</div>
+
+<script>
+const productSearch = document.getElementById("productSearch");
+const categoryFilter = document.getElementById("categoryFilter");
+const catalogCards = document.querySelectorAll(".catalog-card");
+const noProductsMessage = document.getElementById("noProductsMessage");
+
+function filterProducts() {
+    const searchTerm = productSearch.value.trim().toLowerCase();
+    const selectedCategory = categoryFilter.value.trim().toLowerCase();
+    let visibleCount = 0;
+
+    catalogCards.forEach(function (card) {
+        const name = card.dataset.name || "";
+        const category = card.dataset.category || "";
+
+        const matchesSearch = name.includes(searchTerm);
+        const matchesCategory =
+            !selectedCategory || category.includes(selectedCategory);
+
+        const show = matchesSearch && matchesCategory;
+
+        card.hidden = !show;
+
+        if (show) {
+            visibleCount++;
+        }
+    });
+
+    noProductsMessage.hidden = visibleCount !== 0;
+}
+
+productSearch.addEventListener("input", filterProducts);
+categoryFilter.addEventListener("change", filterProducts);
+</script>
+
+<script type="module" src="{{ url_for('static', filename='js/market3d.js') }}"></script>
+
+const searchInput = document.getElementById("product-search-input");
+const suggestionsBox = document.getElementById("search-suggestions");
+let searchTimer;
+
+searchInput?.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+
+    const keyword = searchInput.value.trim();
+
+    if (keyword.length < 2) {
+        suggestionsBox.replaceChildren();
+        return;
+    }
+
+    searchTimer = setTimeout(async () => {
+        try {
+            const response = await fetch(
+                `/api/search-suggestions?q=${encodeURIComponent(keyword)}`
+            );
+
+            if (!response.ok) {
+                throw new Error("Search suggestions unavailable");
+            }
+
+            const products = await response.json();
+            suggestionsBox.replaceChildren();
+
+            products.forEach(product => {
+                const item = document.createElement("button");
+                item.type = "button";
+                item.style.display = "block";
+                item.style.width = "100%";
+                item.style.padding = "12px";
+                item.style.textAlign = "left";
+                item.style.border = "0";
+                item.style.background = "white";
+                item.style.cursor = "pointer";
+
+                // textContent prevents product names being interpreted as HTML.
+                item.textContent =
+                    `${product.name} — ₹${Number(product.price).toFixed(2)}`;
+
+                item.addEventListener("click", () => {
+                    searchInput.value = product.name;
+                    suggestionsBox.replaceChildren();
+                    document.getElementById("product-search-form").requestSubmit();
+                });
+
+                suggestionsBox.appendChild(item);
+            });
+        } catch (error) {
+            suggestionsBox.replaceChildren();
+            console.error(error);
+        }
+    }, 250);
+});
+
+document.addEventListener("click", event => {
+    if (!event.target.closest("#product-search-form")) {
+        suggestionsBox?.replaceChildren();
+    }
+});
+
+</body>
+</html>

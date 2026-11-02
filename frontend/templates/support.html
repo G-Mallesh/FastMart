@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Customer Support | FAST MART</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="navbar">
+    <a href="{{ url_for('login') }}">FAST MART</a>
+    <nav>
+        <a href="{{ url_for('market') }}">Shop</a>
+        <a href="{{ url_for('my_orders') }}">My Orders</a>
+    </nav>
+</header>
+
+<main class="container">
+    <h1>Customer Support</h1>
+    <p>Tell us about a problem with your order.</p>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <form method="POST" class="form-card">
+        {# Add a valid CSRF token here when CSRF protection is configured. #}
+
+        <label for="order_id">Order ID (optional)</label>
+        <input id="order_id" name="order_id" type="number" min="1">
+
+        <label for="subject">Subject</label>
+        <input id="subject" name="subject"
+               maxlength="150" required>
+
+        <label for="category">Problem type</label>
+        <select id="category" name="category" required>
+            <option value="missing_item">Missing item</option>
+            <option value="damaged_item">Damaged item</option>
+            <option value="late_delivery">Late delivery</option>
+            <option value="payment_issue">Payment issue</option>
+            <option value="other">Other</option>
+        </select>
+
+        <label for="description">Describe the problem</label>
+        <textarea id="description" name="description"
+                  maxlength="5000" rows="5" required></textarea>
+
+        <button type="submit">Submit Complaint</button>
+    </form>
+
+    <h2>My Complaints</h2>
+
+    {% for complaint in complaints %}
+        <article class="form-card">
+            <h3>#{{ complaint.id }} — {{ complaint.subject }}</h3>
+            <p>Category: {{ complaint.category.replace('_', ' ') }}</p>
+            <p>Status: <strong>{{ complaint.status.replace('_', ' ') }}</strong></p>
+            <p>{{ complaint.description }}</p>
+
+            {% if complaint.admin_response %}
+                <h4>Support Response</h4>
+                <p>{{ complaint.admin_response }}</p>
+            {% endif %}
+
+            <small>{{ complaint.created_at }}</small>
+        </article>
+    {% else %}
+        <p>You haven't submitted any complaints yet.</p>
+    {% endfor %}
+</main>
+</body>
+</html>

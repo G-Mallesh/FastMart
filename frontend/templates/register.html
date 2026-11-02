@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Register | FAST MART</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: white;
+        }
+        main {
+            max-width: 480px;
+            margin: 20px auto;
+            background: #1d2a40;
+            padding: 24px;
+            border-radius: 16px;
+        }
+        h1 { color: #55f2a5; }
+        input, select, textarea, button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 14px;
+            box-sizing: border-box;
+            border-radius: 7px;
+            border: 1px solid #52647d;
+        }
+        input, select, textarea {
+            background: #101827;
+            color: white;
+        }
+        button {
+            background: #55f2a5;
+            color: #102018;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        a { color: #55f2a5; }
+        .message { color: #ffd166; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Create FAST MART 👤 Account</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% for message in messages %}
+        <p class="message">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="POST">
+        <label for="name">Full name</label>
+        <input id="name" name="name" required minlength="2" maxlength="100">
+
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email"
+               required maxlength="254">
+
+        <label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel"
+               required maxlength="20">
+
+        <label for="address">Address</label>
+        <textarea id="address" name="address" required
+                  minlength="5" maxlength="500"></textarea>
+
+        <label for="role">Account type</label>
+        <select id="role" name="role" required>
+            <option value="customer">Customer</option>
+            <option value="worker">Delivery Worker</option>
+        </select>
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password"
+               required minlength="8" maxlength="128"
+               autocomplete="new-password">
+
+        <label for="confirm_password">Confirm password</label>
+        <input id="confirm_password" name="confirm_password"
+               type="password" required minlength="8" maxlength="128"
+               autocomplete="new-password">
+
+        <button type="submit">Register</button>
+    </form>
+
+    <p>Already registered? <a href="/login">Log in</a></p>
+    <p><a href="/">Back to store</a></p>
+</main>
+</body>
+</html>

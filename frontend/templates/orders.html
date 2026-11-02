@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Orders | FAST MART</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: #f8fafc;
+        }
+        main { max-width: 950px; margin: auto; }
+        h1 { color: #55f2a5; }
+        .order {
+            background: #1d2a40;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 18px 0;
+        }
+        .status { color: #55f2a5; font-weight: bold; }
+        a { color: #55f2a5; }
+        .muted { color: #b6c4d9; }
+        .button {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 7px;
+            background: #55f2a5;
+            color: #102018;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<main>
+    <h1>My Orders</h1>
+    <p>Welcome, {{ session.get('name', 'Customer') }}!</p>
+    <p><a href="/">← Back to FAST MART</a></p>
+
+    {% with messages = get_flashed_messages() %}
+      {% for message in messages %}
+        <p>{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    {% if orders %}
+        {% for order in orders %}
+        <section class="order">
+            <h2>Order {{ order.order_id }}</h2>
+
+            <p>
+                Placed:
+                {{ order.created_at.strftime('%d %b %Y, %I:%M %p')
+                   if order.created_at else 'Date unavailable' }}
+            </p>
+
+            <p>
+                Order status:
+                <span class="status">{{ order.order_status|replace('_', ' ')|title }}</span>
+            </p>
+
+            <p>
+                Delivery status:
+                <span class="status">
+                    {{ (order.delivery_status or 'not available')|replace('_', ' ')|title }}
+                </span>
+            </p>
+
+            <p>
+                Payment: {{ order.payment_status|title }}
+            </p>
+
+            <h3>Total: ₹{{ "%.2f"|format(order.total_amount) }}</h3>
+
+            <a class="button"
+               href="{{ url_for('track_order', order_id=order.order_id) }}">
+                Track Order
+            </a>
+        </section>
+        {% endfor %}
+    {% else %}
+        <section class="order">
+            <h2>No orders yet</h2>
+            <p class="muted">Your completed checkout orders will appear here when placed while logged in.</p>
+            <a class="button" href="/">Start Shopping</a>
+        </section>
+    {% endif %}
+</main>
+</body>
+</html>

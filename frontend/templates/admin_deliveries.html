@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Assign Deliveries | FAST MART</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: Arial, sans-serif;
+            background: #101827;
+            color: #f8fafc;
+        }
+        main { max-width: 950px; margin: auto; }
+        h1 { color: #55f2a5; }
+        a { color: #55f2a5; }
+        .card {
+            padding: 20px;
+            margin: 18px 0;
+            border-radius: 12px;
+            background: #1d2a40;
+        }
+        select, button {
+            padding: 11px;
+            margin-top: 10px;
+            border-radius: 7px;
+        }
+        select { max-width: 100%; }
+        button {
+            border: 0;
+            background: #55f2a5;
+            color: #102018;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .message { color: #ffd166; }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Delivery Assignments</h1>
+    <p><a href="{{ url_for('admin_dashboard') }}">← Admin Dashboard</a></p>
+
+    {% with messages = get_flashed_messages() %}
+      {% for message in messages %}
+        <p class="message">{{ message }}</p>
+      {% endfor %}
+    {% endwith %}
+
+    {% for delivery in deliveries %}
+    <section class="card">
+        <h2>Order #{{ delivery.order_id }}</h2>
+        <p>Delivery ID: {{ delivery.delivery_id }}</p>
+        <p>Address: {{ delivery.delivery_address }}</p>
+        <p>Order amount: ₹{{ "%.2f"|format(delivery.total_amount) }}</p>
+
+        {% if workers %}
+        <form method="POST">
+            <input type="hidden" name="delivery_id"
+                   value="{{ delivery.delivery_id }}">
+
+            <label for="worker-{{ delivery.delivery_id }}">
+                Choose delivery worker
+            </label>
+            <select id="worker-{{ delivery.delivery_id }}"
+                    name="worker_id" required>
+                <option value="">Select worker</option>
+                {% for worker in workers %}
+                <option value="{{ worker.id }}">
+                    {{ worker.name }} — {{ worker.email }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Assign Worker</button>
+        </form>
+        {% else %}
+            <p>No worker accounts are registered yet.</p>
+        {% endif %}
+    </section>
+    {% else %}
+    <section class="card">
+        <h2>No waiting deliveries</h2>
+        <p>New unassigned deliveries will appear here after orders are placed.</p>
+    </section>
+    {% endfor %}
+</main>
+</body>
+</html>

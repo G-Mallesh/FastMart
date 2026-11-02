@@ -1,0 +1,64 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FAST MART Rewards</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .rewards-page { max-width: 900px; margin: 30px auto; padding: 16px; }
+        .points-card {
+            padding: 28px; border-radius: 18px;
+            background: #e8f7ed; margin: 20px 0;
+        }
+        .points-number { font-size: 2.5rem; font-weight: 800; }
+        .history-item {
+            background: white; padding: 16px;
+            margin: 12px 0; border-radius: 12px;
+            box-shadow: 0 2px 10px #0000000d;
+        }
+    </style>
+</head>
+<body>
+<header class="navbar">
+    <a href="{{ url_for('login') }}">FAST MART</a>
+    <nav>
+        <a href="{{ url_for('home') }}">Shop</a>
+        <a href="{{ url_for('my_orders') }}">My Orders</a>
+    </nav>
+</header>
+
+<main class="rewards-page">
+    <h1>My Rewards</h1>
+    <p>Earn points when your eligible grocery orders are delivered.</p>
+
+    <section class="points-card">
+        <p>Your available points</p>
+        <div class="points-number">{{ points_balance }}</div>
+        <p>100 points = ₹10 redemption value</p>
+        <p>Earn 1 point for every ₹10 of eligible order value.</p>
+    </section>
+
+    <h2>Rewards History</h2>
+
+    {% for transaction in transactions %}
+        <article class="history-item">
+            <strong>{{ transaction.description }}</strong>
+            <p>
+                {% if transaction.points > 0 %}+{% endif %}
+                {{ transaction.points }} points
+                ({{ transaction.transaction_type }})
+            </p>
+            {% if transaction.order_id %}
+                <p>Order #{{ transaction.order_id }}</p>
+            {% endif %}
+            <small>{{ transaction.created_at }}</small>
+        </article>
+    {% else %}
+        <p>No rewards transactions yet. Complete an eligible order to earn points.</p>
+    {% endfor %}
+</main>
+</body>
+</html>
