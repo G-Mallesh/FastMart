@@ -522,7 +522,7 @@ productSearch.addEventListener("input", filterProducts);
 categoryFilter.addEventListener("change", filterProducts);
 </script>
 
-<script type="module" src="{{ url_for('static', filename='js/market3d.js') }}"></script>
+<script type="module" src="{{ url_for('static', filename='js/market3d.js') }}">
 
 const searchInput = document.getElementById("product-search-input");
 const suggestionsBox = document.getElementById("search-suggestions");
@@ -586,6 +586,6 @@ document.addEventListener("click", event => {
         suggestionsBox?.replaceChildren();
     }
 });
-
+</script>
 </body>
 </html>
